@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>精錬のエレメンタル</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(138, 43, 226, 0.3) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(75, 0, 130, 0.25) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(0, 255, 127, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 30% 70%, rgba(186, 85, 211, 0.2) 0%, transparent 35%),
+        radial-gradient(circle at 70% 30%, rgba(46, 213, 115, 0.2) 0%, transparent 35%),
+        linear-gradient(135deg, #1a0a3e 0%, #2d1b4e 25%, #1e3a1e 50%, #3a1f5c 75%, #1a0a3e 100%);
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image:
+        repeating-linear-gradient(45deg, transparent, transparent 50px, rgba(138, 43, 226, 0.03) 50px, rgba(138, 43, 226, 0.03) 52px),
+        repeating-linear-gradient(-45deg, transparent, transparent 50px, rgba(46, 213, 115, 0.03) 50px, rgba(46, 213, 115, 0.03) 52px),
+        radial-gradient(ellipse at 20% 40%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(0, 255, 127, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    @keyframes fallDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+    .fall-animation {
+      animation: fallDown 0.5s ease-in-out;
+    }
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.2); }
+      50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.4); }
+    }
+    @keyframes goldGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.4), inset 0 0 10px rgba(255, 215, 0, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255, 215, 0, 0.5); }
+    }
+    @keyframes refinementFadeIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+      80% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+      }
+    }
+    .refinement-effect {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2000;
+      pointer-events: none;
+      animation: refinementFadeIn 1.8s ease-out;
+    }
+    @keyframes cellHighlight {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 215, 0, 0.6);
+      }
+      50% {
+        transform: scale(1.3);
+        box-shadow: 0 0 40px rgba(255, 255, 255, 1), 0 0 80px rgba(255, 215, 0, 1);
+      }
+    }
+    .cell-highlight {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1500;
+      animation: cellHighlight 0.8s ease-in-out;
+      border-radius: 50%;
+    }
+    @keyframes comboPopIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(20px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.2) translateY(-10px);
+      }
+      70% {
+        transform: scale(0.95) translateY(-5px);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.8) translateY(-30px);
+      }
+    }
+    .combo-display {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2500;
+      pointer-events: none;
+      animation: comboPopIn 1s ease-out;
+      font-size: 4rem;
+      font-weight: 900;
+      text-shadow:
+        0 0 10px rgba(255, 215, 0, 1),
+        0 0 20px rgba(255, 215, 0, 0.8),
+        0 0 30px rgba(255, 215, 0, 0.6),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      color: #ffd700;
+    }
+    @keyframes phraseSlideIn {
+      0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-100px) scale(0.5);
+      }
+      20% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1.1);
+      }
+      80% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(50px) scale(0.8);
+      }
+    }
+    .phrase-display {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2500;
+      pointer-events: none;
+      animation: phraseSlideIn 1.5s ease-out;
+      font-size: 2.5rem;
+      font-weight: 900;
+      padding: 15px 40px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(50, 50, 50, 0.9) 100%);
+      border: 3px solid;
+      white-space: nowrap;
+    }
+    .phrase-silver {
+      color: #e8e8e8;
+      border-color: #c0c0c0;
+      text-shadow:
+        0 0 10px rgba(192, 192, 192, 1),
+        0 0 20px rgba(192, 192, 192, 0.8),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 30px rgba(192, 192, 192, 0.6);
+    }
+    .phrase-gold {
+      color: #ffd700;
+      border-color: #ffed4e;
+      text-shadow:
+        0 0 10px rgba(255, 215, 0, 1),
+        0 0 20px rgba(255, 215, 0, 0.8),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+    }
+    .phrase-heart {
+      color: #ff69b4;
+      border-color: #ff1493;
+      text-shadow:
+        0 0 10px rgba(255, 105, 180, 1),
+        0 0 20px rgba(255, 105, 180, 0.8),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 30px rgba(255, 105, 180, 0.6);
+    }
+    .phrase-special {
+      color: #eeff00;
+      border-color: #ccff00;
+      text-shadow:
+        0 0 10px rgba(238, 255, 0, 1),
+        0 0 20px rgba(238, 255, 0, 0.8),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 30px rgba(238, 255, 0, 0.6);
+    }
+    .phrase-elixir {
+      color: #ff69b4;
+      border-color: #aa00ff;
+      text-shadow:
+        0 0 10px rgba(170, 0, 255, 1),
+        0 0 20px rgba(255, 105, 180, 0.8),
+        3px 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 0 30px rgba(170, 0, 255, 0.6);
+    }
+    @keyframes secretMissionPopIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5) rotate(-10deg);
+      }
+      50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotate(5deg);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+    }
+    .secret-mission-node {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2600;
+      animation: secretMissionPopIn 0.6s ease-out;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.95) 0%, rgba(255, 140, 0, 0.95) 100%);
+      padding: 30px 50px;
+      border-radius: 20px;
+      border: 4px solid #ffd700;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 80px rgba(255, 140, 0, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.4);
+      transition: all 0.3s ease;
+    }
+    .secret-mission-node:hover {
+      transform: translate(-50%, -50%) scale(1.05);
+      box-shadow: 0 0 60px rgba(255, 215, 0, 1), 0 0 100px rgba(255, 140, 0, 0.8), inset 0 0 25px rgba(255, 255, 255, 0.5);
+    }
+    @keyframes crossFlash {
+      0% {
+        opacity: 0;
+        filter: blur(8px) brightness(2);
+      }
+      15% {
+        opacity: 1;
+        filter: blur(4px) brightness(2.5);
+      }
+      35% {
+        opacity: 0.9;
+        filter: blur(2px) brightness(2);
+      }
+      60% {
+        opacity: 0.6;
+        filter: blur(3px) brightness(1.8);
+      }
+      100% {
+        opacity: 0;
+        filter: blur(6px) brightness(1);
+      }
+    }
+    @keyframes crossShimmer {
+      0%, 100% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+    }
+    .cross-effect {
+      position: absolute;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .cross-horizontal {
+      background: linear-gradient(90deg,
+        rgba(255, 215, 0, 0.3) 0%,
+        rgba(255, 255, 0, 0.7) 15%,
+        rgba(255, 255, 255, 0.95) 30%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 0.95) 70%,
+        rgba(255, 255, 0, 0.7) 85%,
+        rgba(255, 215, 0, 0.3) 100%);
+      background-size: 200% 100%;
+      animation: crossFlash 1s ease-out, crossShimmer 0.5s ease-in-out;
+      box-shadow:
+        0 0 20px rgba(255, 255, 0, 0.8),
+        0 0 40px rgba(255, 255, 255, 0.6),
+        0 0 60px rgba(255, 215, 0, 0.4),
+        inset 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+    .cross-vertical {
+      background: linear-gradient(180deg,
+        rgba(255, 215, 0, 0.3) 0%,
+        rgba(255, 255, 0, 0.7) 15%,
+        rgba(255, 255, 255, 0.95) 30%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 0.95) 70%,
+        rgba(255, 255, 0, 0.7) 85%,
+        rgba(255, 215, 0, 0.3) 100%);
+      background-size: 100% 200%;
+      animation: crossFlash 1s ease-out, crossShimmer 0.5s ease-in-out;
+      box-shadow:
+        0 0 20px rgba(255, 255, 0, 0.8),
+        0 0 40px rgba(255, 255, 255, 0.6),
+        0 0 60px rgba(255, 215, 0, 0.4),
+        inset 0 0 15px rgba(255, 255, 255, 0.4);
+    }
+    .cross-horizontal-sharp {
+      background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 215, 0, 0.9) 10%,
+        rgba(255, 255, 255, 1) 25%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 1) 75%,
+        rgba(255, 215, 0, 0.9) 90%,
+        transparent 100%);
+      animation: crossFlash 0.8s ease-out;
+      box-shadow:
+        0 0 15px rgba(255, 255, 255, 1),
+        0 0 30px rgba(255, 255, 0, 0.8),
+        0 0 45px rgba(255, 215, 0, 0.5);
+    }
+    .cross-vertical-sharp {
+      background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(255, 215, 0, 0.9) 10%,
+        rgba(255, 255, 255, 1) 25%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 1) 75%,
+        rgba(255, 215, 0, 0.9) 90%,
+        transparent 100%);
+      animation: crossFlash 0.8s ease-out;
+      box-shadow:
+        0 0 15px rgba(255, 255, 255, 1),
+        0 0 30px rgba(255, 255, 0, 0.8),
+        0 0 45px rgba(255, 215, 0, 0.5);
+    }
+    @keyframes rainbowBorder {
+      0% { border-color: #ff0080; }
+      14% { border-color: #ff8000; }
+      28% { border-color: #ffff00; }
+      42% { border-color: #80ff00; }
+      57% { border-color: #00ff80; }
+      71% { border-color: #00ffff; }
+      85% { border-color: #0080ff; }
+      100% { border-color: #ff0080; }
+    }
+    @keyframes elixirBurst {
+      0% {
+        opacity: 0;
+        transform: scale(0);
+      }
+      10% {
+        opacity: 1;
+        transform: scale(1.2);
+      }
+      90% {
+        opacity: 0.8;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.5);
+      }
+    }
+    @keyframes elixirFlash {
+      0%, 100% {
+        background: transparent;
+      }
+      10%, 30%, 50% {
+        background: radial-gradient(circle, rgba(255, 105, 180, 0.3) 0%, transparent 70%);
+      }
+      20%, 40%, 60% {
+        background: radial-gradient(circle, rgba(170, 0, 255, 0.3) 0%, transparent 70%);
+      }
+    }
+    @keyframes starBurst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0) rotate(0deg);
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(3) rotate(360deg);
+      }
+    }
+    .elixir-effect {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1900;
+    }
+    .elixir-flash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      animation: elixirFlash 1.5s ease-out;
+    }
+    .elixir-particle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 105, 180, 0.8) 50%, rgba(170, 0, 255, 0) 100%);
+      animation: elixirBurst 1.5s ease-out;
+      box-shadow: 0 0 20px rgba(255, 105, 180, 1);
+    }
+    .elixir-star {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100px;
+      height: 100px;
+      animation: starBurst 1.2s ease-out;
+    }
+    .elixir-star::before,
+    .elixir-star::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(90deg, transparent 45%, rgba(255, 105, 180, 1) 50%, transparent 55%);
+      box-shadow: 0 0 30px rgba(255, 105, 180, 1);
+    }
+    .elixir-star::before {
+      width: 100%;
+      height: 4px;
+    }
+    .elixir-star::after {
+      width: 4px;
+      height: 100%;
+    }
+    .silver-metallic {
+      background: linear-gradient(135deg, #e8e8e8 0%, #a0a0a0 25%, #c0c0c0 50%, #808080 75%, #d0d0d0 100%);
+      background-size: 200% 200%;
+      animation: shimmer 3s ease-in-out infinite, glow 2s ease-in-out infinite, rainbowBorder 3s linear infinite;
+      border: 5px solid #ff0080;
+      box-shadow:
+        0 0 15px rgba(192, 192, 192, 0.8),
+        inset 0 0 20px rgba(255, 255, 255, 0.3),
+        0 0 25px rgba(255, 0, 128, 0.6);
+    }
+    .gold-metallic {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ff9500 50%, #ffed4e 75%, #ffd700 100%);
+      background-size: 200% 200%;
+      animation: shimmer 3s ease-in-out infinite, goldGlow 2s ease-in-out infinite, rainbowBorder 3s linear infinite;
+      border: 5px solid #ff0080;
+      box-shadow:
+        0 0 15px rgba(255, 215, 0, 0.9),
+        inset 0 0 20px rgba(255, 237, 78, 0.5),
+        0 0 25px rgba(255, 0, 128, 0.6);
+    }
+    .element-earth {
+      background: linear-gradient(135deg, #ffd700 0%, #ffb300 50%, #ff8c00 100%);
+      box-shadow: 0 2px 10px rgba(255, 179, 0, 0.6), inset 0 0 15px rgba(255, 235, 59, 0.5);
+    }
+    .element-water {
+      background: linear-gradient(135deg, #00bfff 0%, #0099ff 50%, #0066ff 100%);
+      box-shadow: 0 2px 10px rgba(0, 153, 255, 0.6), inset 0 0 15px rgba(0, 191, 255, 0.5);
+    }
+    .element-fire {
+      background: linear-gradient(135deg, #ff4444 0%, #ff0000 50%, #cc0000 100%);
+      box-shadow: 0 2px 10px rgba(255, 0, 0, 0.7), inset 0 0 15px rgba(255, 68, 68, 0.6);
+    }
+    .element-wind {
+      background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      box-shadow: 0 2px 10px rgba(240, 240, 240, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.8);
+    }
+    .element-nature {
+      background: linear-gradient(135deg, #00e676 0%, #00c853 50%, #00a046 100%);
+      box-shadow: 0 2px 10px rgba(0, 200, 83, 0.6), inset 0 0 15px rgba(0, 230, 118, 0.5);
+    }
+    .element-spirit {
+      background: linear-gradient(135deg, #d500f9 0%, #aa00ff 50%, #7b1fa2 100%);
+      box-shadow: 0 2px 10px rgba(170, 0, 255, 0.7), inset 0 0 15px rgba(213, 0, 249, 0.6);
+    }
+    .element-special {
+      background: linear-gradient(135deg, #eeff00 0%, #ccff00 50%, #aaff00 100%);
+      box-shadow: 0 2px 10px rgba(204, 255, 0, 0.8), inset 0 0 15px rgba(238, 255, 0, 0.7);
+      animation: glow 2s ease-in-out infinite;
+    }
+    @keyframes heartBeat {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 20, 147, 1), 0 0 40px rgba(255, 105, 180, 0.8), 0 0 60px rgba(255, 0, 110, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.4);
+      }
+      50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 30px rgba(255, 20, 147, 1), 0 0 60px rgba(255, 105, 180, 1), 0 0 90px rgba(255, 0, 110, 0.8), inset 0 0 40px rgba(255, 255, 255, 0.6);
+      }
+    }
+    @keyframes heartShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    @keyframes titleFadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes buttonPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.4);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 60px rgba(255, 215, 0, 0.6);
+      }
+    }
+    .title-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('./image/title.jpeg');
+      background-size: contain;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-color: #1a0a3e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10vh;
+      z-index: 3000;
+      animation: titleFadeIn 1s ease-out;
+      overflow: hidden;
+    }
+    .start-button {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 25%, #ff9500 50%, #ffed4e 75%, #ffd700 100%);
+      background-size: 200% 200%;
+      animation: shimmer 3s ease-in-out infinite, buttonPulse 2s ease-in-out infinite;
+      border: 4px solid #ffed4e;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), 0 0 40px rgba(255, 215, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 18px 80px;
+      font-size: 28px;
+      font-weight: 900;
+      border-radius: 50px;
+      color: #000;
+      text-shadow: 0 2px 4px rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.15em;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .start-button:hover, .start-button:active {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.9), 0 0 80px rgba(255, 215, 0, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.5);
+    }
+    @media (max-width: 768px) {
+      .title-screen {
+        background-size: cover;
+        background-position: center top;
+        padding-bottom: 20vh;
+      }
+      .start-button {
+        padding: 16px 60px;
+        font-size: 24px;
+      }
+    }
+    @media (max-width: 480px) {
+      .title-screen {
+        background-size: cover;
+      }
+      .start-button {
+        padding: 14px 50px;
+        font-size: 20px;
+      }
+    }
+    .element-heart {
+      background: linear-gradient(135deg,
+        #ff1493 0%,
+        #ff69b4 15%,
+        #ff1493 30%,
+        #ff006e 50%,
+        #ff1493 70%,
+        #ff69b4 85%,
+        #d90056 100%);
+      background-size: 200% 200%;
+      box-shadow: 0 0 20px rgba(255, 20, 147, 1), 0 0 40px rgba(255, 105, 180, 0.8), 0 0 60px rgba(255, 0, 110, 0.6), inset 0 0 30px rgba(255, 255, 255, 0.4);
+      animation: heartBeat 1.5s ease-in-out infinite, heartShimmer 3s ease-in-out infinite;
+      border: 2px solid rgba(255, 255, 255, 0.6);
+      position: relative;
+    }
+    .element-heart::before {
+      content: '♥';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 0 10px rgba(255, 255, 255, 1);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function MainComponent({ board, setBoard, turns, setTurns, combo, setCombo, maxCombo, setMaxCombo, score, totalCombo, isGameCleared, setIsGameCleared, isGameOver, onCellClick, onArrowClick, selectedCell, playSound, movedElements, crossEffects, refinementEffects, comboDisplays, elixirCount, itemMode, setItemMode, resetMovedElements, hasReset, cellHighlights, phraseDisplays, elixirEffects, secretMission, setSecretMission, showClearIllust, setShowClearIllust }) {
+      const elements = {
+        地球: 'element-earth',
+        水: 'element-water',
+        火: 'element-fire',
+        風: 'element-wind',
+        自然: 'element-nature',
+        スピリット: 'element-spirit',
+        シルバー: 'silver-metallic',
+        ゴールド: 'gold-metallic',
+        ハート: 'element-heart',
+        special: 'element-special',
+        empty: 'bg-transparent',
+      };
+
+      const renderCell = (value, rowIndex, colIndex) => {
+        const isHeart = value === 'ハート';
+        const cellSize = isHeart ? 'w-10 h-10' : 'w-8 h-8';
+        const isMoved = movedElements[rowIndex][colIndex];
+        const isImmovable = ['シルバー', 'ゴールド', 'ハート'].includes(value) || isMoved;
+        const isSelected = selectedCell && selectedCell.row === rowIndex && selectedCell.col === colIndex;
+
+        let cellClass = `${cellSize} rounded-full transition-all duration-300 ${elements[value] || 'bg-transparent'}`;
+
+        if (value === 'シルバー' || value === 'ゴールド' || value === 'ハート') {
+          cellClass += ' cursor-not-allowed';
+        } else if (isMoved) {
+          cellClass += ' cursor-not-allowed opacity-50';
+        } else if (itemMode) {
+          cellClass += ' cursor-pointer ring-2 ring-purple-400';
+        } else {
+          cellClass += ' cursor-pointer';
+        }
+
+        if (isSelected) {
+          cellClass += ' ring-4 ring-white';
+        }
+
+        return (
+          <div key={`${rowIndex}-${colIndex}`} className={`relative flex items-center justify-center ${isHeart ? 'z-10' : ''}`}>
+            <div
+              className={cellClass}
+              onClick={() => !isImmovable && onCellClick(rowIndex, colIndex)}
+              data-row={rowIndex}
+              data-col={colIndex}
+            />
+            {isMoved && !['シルバー', 'ゴールド', 'ハート'].includes(value) && (
+              <div className="absolute text-white text-lg font-bold pointer-events-none">✓</div>
+            )}
+            {isSelected && (
+              <>
+                {rowIndex > 0 && (
+                  <div
+                    className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-white text-black w-6 h-6 flex items-center justify-center rounded cursor-pointer hover:bg-gray-200 z-20"
+                    onClick={() => onArrowClick(rowIndex, colIndex, rowIndex - 1, colIndex)}
+                  >
+                    ↑
+                  </div>
+                )}
+                {rowIndex < 17 && (
+                  <div
+                    className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-white text-black w-6 h-6 flex items-center justify-center rounded cursor-pointer hover:bg-gray-200 z-20"
+                    onClick={() => onArrowClick(rowIndex, colIndex, rowIndex + 1, colIndex)}
+                  >
+                    ↓
+                  </div>
+                )}
+                {colIndex > 0 && (
+                  <div
+                    className="absolute -left-8 top-1/2 transform -translate-y-1/2 bg-white text-black w-6 h-6 flex items-center justify-center rounded cursor-pointer hover:bg-gray-200 z-20"
+                    onClick={() => onArrowClick(rowIndex, colIndex, rowIndex, colIndex - 1)}
+                  >
+                    ←
+                  </div>
+                )}
+                {colIndex < 11 && (
+                  <div
+                    className="absolute -right-8 top-1/2 transform -translate-y-1/2 bg-white text-black w-6 h-6 flex items-center justify-center rounded cursor-pointer hover:bg-gray-200 z-20"
+                    onClick={() => onArrowClick(rowIndex, colIndex, rowIndex, colIndex + 1)}
+                  >
+                    →
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        );
+      };
+
+      return (
+        <>
+          {showClearIllust && (
+            <>
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                zIndex: 2500
+              }} />
+              <div
+                style={{
+                  position: 'fixed',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 2600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
+                }}
+                onClick={() => {
+                  setShowClearIllust(false);
+                  setIsGameCleared(true);
+                  window.__gameCleared = true;
+                  if (window.__clearIllustResolve) {
+                    window.__clearIllustResolve();
+                    window.__clearIllustResolve = null;
+                  }
+                }}
+              >
+                <img
+                  src="./image/heart.png"
+                  alt="heart"
+                  style={{
+                    maxWidth: '80vw',
+                    maxHeight: '80vh',
+                    width: '500px',
+                    height: '500px',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.8))'
+                  }}
+                />
+                <div style={{
+                  marginTop: '30px',
+                  color: '#fff',
+                  fontSize: '1.5rem',
+                  fontWeight: 'bold',
+                  textShadow: '0 0 10px rgba(0, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 1)',
+                  whiteSpace: 'nowrap'
+                }}>
+                  クリックしてエンディングへ
+                </div>
+              </div>
+            </>
+          )}
+          {secretMission && (
+            <div className="secret-mission-node" onClick={() => setSecretMission(null)}>
+              <div className="text-center">
+                <div className="text-3xl font-black mb-3" style={{
+                  color: '#000',
+                  textShadow: '0 0 10px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.3)'
+                }}>
+                  🎉 秘密ミッション達成！ 🎉
+                </div>
+                <div className="text-2xl font-bold" style={{
+                  color: '#fff',
+                  textShadow: '0 0 8px rgba(0, 0, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.5)'
+                }}>
+                  獲得スコア: +{secretMission.score}
+                </div>
+                <div className="text-sm mt-3 opacity-80" style={{
+                  color: '#000',
+                  textShadow: '1px 1px 2px rgba(255, 255, 255, 0.5)'
+                }}>
+                  クリックして閉じる
+                </div>
+              </div>
+            </div>
+          )}
+          {elixirEffects.map(effect => {
+            const particles = [];
+            for (let i = 0; i < 30; i++) {
+              const angle = (Math.PI * 2 * i) / 30;
+              const distance = 50 + Math.random() * 200;
+              const x = 50 + Math.cos(angle) * distance / 5;
+              const y = 50 + Math.sin(angle) * distance / 5;
+              particles.push(
+                <div
+                  key={`particle-${i}`}
+                  className="elixir-particle"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    animationDelay: `${i * 0.02}s`
+                  }}
+                />
+              );
+            }
+
+            return (
+              <div key={effect.id} className="elixir-effect">
+                <div className="elixir-flash" />
+                <div className="elixir-star" />
+                <div className="elixir-star" style={{ animationDelay: '0.2s', transform: 'translate(-50%, -50%) rotate(45deg)' }} />
+                {particles}
+              </div>
+            );
+          })}
+          {phraseDisplays.map(phrase => (
+            <div key={phrase.id} className={`phrase-display phrase-${phrase.type}`}>
+              {phrase.text}
+            </div>
+          ))}
+          {comboDisplays.map(display => (
+            <div key={display.id} className="combo-display">
+              {display.combo} COMBO!
+            </div>
+          ))}
+          {refinementEffects.map(effect => {
+            let imageName = '';
+            if (effect.type === 'silver') imageName = 'silver';
+            else if (effect.type === 'gold') imageName = 'gold';
+            else if (effect.type === 'heart') imageName = 'heart';
+            else if (effect.type === 'special') imageName = 'special';
+            else if (effect.type === 'reset') imageName = 'reset';
+            else if (effect.type === 'elixir') imageName = 'title';
+
+            return (
+              <div key={effect.id} className="refinement-effect">
+                <img
+                  src={effect.type === 'elixir' ? `./image/${imageName}.jpeg` : `./image/${imageName}.png`}
+                  alt={effect.type}
+                  style={{
+                    maxWidth: '80vw',
+                    maxHeight: '80vh',
+                    width: '500px',
+                    height: '500px',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 0 30px rgba(255, 255, 255, 0.8))'
+                  }}
+                />
+              </div>
+            );
+          })}
+          <div className="flex flex-col items-center p-8 rounded-3xl relative border border-gray-800" style={{
+            background: `
+              radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.25) 0%, transparent 40%),
+              radial-gradient(circle at 80% 70%, rgba(46, 213, 115, 0.2) 0%, transparent 40%),
+              radial-gradient(circle at 50% 50%, rgba(75, 0, 130, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 10% 80%, rgba(186, 85, 211, 0.2) 0%, transparent 35%),
+              radial-gradient(circle at 90% 20%, rgba(0, 255, 127, 0.15) 0%, transparent 35%),
+              repeating-linear-gradient(45deg, transparent, transparent 30px, rgba(138, 43, 226, 0.08) 30px, rgba(138, 43, 226, 0.08) 32px),
+              repeating-linear-gradient(-45deg, transparent, transparent 30px, rgba(46, 213, 115, 0.08) 30px, rgba(46, 213, 115, 0.08) 32px),
+              #000000
+            `,
+            boxShadow: '0 0 60px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.5)'
+          }}>
+          <div className="text-center mb-6 px-6 py-3 bg-gradient-to-b from-black to-gray-900 rounded-2xl border border-yellow-600" style={{
+            boxShadow: '0 0 30px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+          }}>
+            <h1 className="text-4xl font-black mb-1" style={{
+              color: '#ffd700',
+              textShadow: '0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4), 3px 3px 0 rgba(0, 0, 0, 1)',
+              letterSpacing: '0.05em'
+            }}>精錬のエレメンタル ハーツ</h1>
+            <h2 className="text-lg font-bold" style={{
+              color: '#ffb300',
+              textShadow: '0 0 15px rgba(255, 179, 0, 0.6), 2px 2px 0 rgba(0, 0, 0, 1)',
+              letterSpacing: '0.1em'
+            }}>Elemental Hearts Refinery</h2>
+          </div>
+          <div className="mb-6 flex gap-3 w-full justify-center flex-wrap">
+            <div className={`bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-600 px-5 py-3 rounded-xl border-2 border-pink-400 transition-all ${elixirCount > 0 ? 'cursor-pointer hover:from-pink-400 hover:via-purple-400 hover:to-indigo-500' : ''}`} style={{
+              boxShadow: '0 4px 20px rgba(236, 72, 153, 0.6), 0 0 30px rgba(168, 85, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
+              animation: elixirCount > 0 ? 'shimmer 3s ease-in-out infinite' : 'none',
+              backgroundSize: '200% 200%'
+            }}
+            onClick={() => elixirCount > 0 && setItemMode(!itemMode)}
+            >
+              <div className="text-pink-100 text-xs font-semibold tracking-wider">エリクサー {itemMode && '✨'}</div>
+              <div className="text-white text-2xl font-black" style={{textShadow: '0 0 10px rgba(255, 105, 180, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.8)'}}>{elixirCount}</div>
+              {elixirCount > 0 && <div className="text-pink-100 text-xs font-bold mt-1">{itemMode ? '選択中' : 'クリックで使用'}</div>}
+            </div>
+            <div className={`bg-gradient-to-b from-green-600 to-green-800 px-5 py-3 rounded-xl border-2 border-green-500 transition-all ${score >= 10000 && !hasReset ? 'cursor-pointer hover:from-green-500 hover:to-green-700' : ''}`} style={{
+              boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.3)'
+            }}
+            onClick={() => score >= 10000 && !hasReset && resetMovedElements()}
+            >
+              <div className="text-green-200 text-xs font-semibold tracking-wider">スコア {score >= 10000 && !hasReset && '✨'}</div>
+              <div className="text-white text-2xl font-black" style={{textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)'}}>{score}</div>
+              {score >= 10000 && !hasReset && <div className="text-green-200 text-xs font-bold mt-1">クリックでリセット</div>}
+            </div>
+            <div className="bg-gradient-to-b from-blue-600 to-blue-800 px-4 py-3 rounded-xl border-2 border-blue-500" style={{
+              boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.3)'
+            }}>
+              <div className="text-blue-200 text-xs font-semibold tracking-wider">ターン</div>
+              <div className="text-white text-xl font-black" style={{textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)'}}>{turns}</div>
+            </div>
+            <div className="bg-gradient-to-b from-purple-600 to-purple-800 px-4 py-3 rounded-xl border-2 border-purple-500" style={{
+              boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.3)'
+            }}>
+              <div className="text-purple-200 text-xs font-semibold tracking-wider">最大コンボ</div>
+              <div className="text-white text-xl font-black" style={{textShadow: '2px 2px 4px rgba(0, 0, 0, 0.8)'}}>{maxCombo}</div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-1 bg-black p-4 rounded-2xl border-2 border-gray-800 relative overflow-visible" style={{
+            boxShadow: 'inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 0, 0, 0.5)'
+          }}>
+            {board.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex gap-1">
+                {row.map((cell, colIndex) => renderCell(cell, rowIndex, colIndex))}
+              </div>
+            ))}
+            {cellHighlights.map(highlight => {
+              const cellSize = 36;
+              const gap = 4;
+              const top = highlight.row * cellSize + highlight.row * gap;
+              const left = highlight.col * cellSize + highlight.col * gap;
+
+              return (
+                <div key={highlight.id} className="cell-highlight" style={{
+                  top: `${top}px`,
+                  left: `${left}px`,
+                  width: '36px',
+                  height: '36px',
+                  border: '4px solid rgba(255, 215, 0, 1)',
+                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 215, 0, 0.3) 100%)'
+                }}></div>
+              );
+            })}
+            {crossEffects.map(effect => {
+              const cellSize = 36;
+              const gap = 4;
+              const rowPosition = effect.row * cellSize + effect.row * gap + 12;
+              const colPosition = effect.col * cellSize + effect.col * gap + 12;
+
+              return (
+                <React.Fragment key={effect.id}>
+                  <div className="cross-horizontal" style={{
+                    position: 'absolute',
+                    top: `${rowPosition}px`,
+                    left: 0,
+                    right: 0,
+                    height: '36px',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 1000
+                  }}></div>
+                  <div className="cross-vertical" style={{
+                    position: 'absolute',
+                    left: `${colPosition}px`,
+                    top: 0,
+                    bottom: 0,
+                    width: '36px',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 1000
+                  }}></div>
+                  <div className="cross-horizontal-sharp" style={{
+                    position: 'absolute',
+                    top: `${rowPosition}px`,
+                    left: 0,
+                    right: 0,
+                    height: '8px',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 1001
+                  }}></div>
+                  <div className="cross-vertical-sharp" style={{
+                    position: 'absolute',
+                    left: `${colPosition}px`,
+                    top: 0,
+                    bottom: 0,
+                    width: '8px',
+                    transform: 'translateX(-50%)',
+                    pointerEvents: 'none',
+                    zIndex: 1001
+                  }}></div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+          {isGameOver && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl p-4">
+              <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white px-8 py-6 rounded-2xl shadow-2xl border-4 border-red-500 max-w-md">
+                <div className="text-center mb-4">
+                  <div className="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-red-600">ゲームオーバー</div>
+                  <div className="text-2xl text-gray-300 my-4">100ターン到達</div>
+                </div>
+                <div className="space-y-2 text-lg mb-4">
+                  <div className="flex justify-between border-b border-gray-600 pb-1">
+                    <span>最終スコア:</span><span className="font-bold">{score}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-600 pb-1">
+                    <span>最大コンボ:</span><span className="font-bold">{maxCombo}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-gray-600 pb-1">
+                    <span>ターン数:</span><span className="font-bold">{turns}</span>
+                  </div>
+                </div>
+                <div className="text-center text-gray-400 text-sm">
+                  ページをリロードして再挑戦
+                </div>
+              </div>
+            </div>
+          )}
+          {isGameCleared && (() => {
+            const bonuses = [];
+            let bonusScore = 0;
+            const turnBonus = Math.max(0, (100 - turns) * 300);
+            let finalScore = score + (maxCombo * 2000) + turnBonus;
+
+            if (turns <= 10) {
+              bonuses.push({name: '🏆 パーフェクト', points: 10000});
+              bonusScore += 10000;
+            } else if (turns <= 15) {
+              bonuses.push({name: '⚡ スピード', points: 5000});
+              bonusScore += 5000;
+            }
+
+            if (maxCombo >= 10) {
+              bonuses.push({name: '💎 エクセレント', points: 10000});
+              bonusScore += 10000;
+            } else if (maxCombo >= 8) {
+              bonuses.push({name: '🔥 コンボマスター', points: 5000});
+              bonusScore += 5000;
+            } else if (maxCombo >= 6) {
+              bonuses.push({name: '⭐ コンボ達人', points: 3000});
+              bonusScore += 3000;
+            } else if (maxCombo >= 4) {
+              bonuses.push({name: '✨ コンボ上級', points: 2000});
+              bonusScore += 2000;
+            } else if (maxCombo >= 2) {
+              bonuses.push({name: '🌟 コンボ中級', points: 1000});
+              bonusScore += 1000;
+            }
+
+            // エリクサー残存ボーナス
+            if (elixirCount > 0) {
+              const elixirBonus = elixirCount * 1000;
+              bonuses.push({name: '💎 エリクサー残存', points: elixirBonus});
+              bonusScore += elixirBonus;
+            }
+
+            finalScore += bonusScore;
+
+            let rank = 'D';
+            if (finalScore >= 70000) rank = 'SS+';
+            else if (finalScore >= 60000) rank = 'SS';
+            else if (finalScore >= 50000) rank = 'S+';
+            else if (finalScore >= 40000) rank = 'S';
+            else if (finalScore >= 30000) rank = 'A+';
+            else if (finalScore >= 25000) rank = 'A';
+            else if (finalScore >= 20000) rank = 'B+';
+            else if (finalScore >= 15000) rank = 'B';
+            else if (finalScore >= 10000) rank = 'C';
+
+            // パスワード生成（SS+ランクのみ）
+            const generatePassword = () => {
+              const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字を除外
+              let password = '';
+              for (let i = 0; i < 10; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+              }
+              return password;
+            };
+            const password = rank === 'SS+' ? generatePassword() : null;
+
+            return (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl p-4">
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 text-white px-8 py-6 rounded-2xl shadow-2xl border-4 border-yellow-500 max-w-md">
+                  <div className="text-center mb-4">
+                    <div className="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">おめでとうございます!</div>
+                    <div className="text-6xl font-black text-yellow-400 my-4">ランク: {rank}</div>
+                  </div>
+                  <div className="space-y-2 text-lg mb-4">
+                    <div className="flex justify-between border-b border-gray-600 pb-1">
+                      <span>基本スコア:</span><span className="font-bold">{score}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-600 pb-1">
+                      <span>かかったターン:</span><span className="font-bold">{turns}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-600 pb-1">
+                      <span>コンボボーナス:</span><span className="font-bold">+{maxCombo * 2000}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-600 pb-1">
+                      <span>ターンボーナス:</span><span className="font-bold text-green-400">+{turnBonus}</span>
+                    </div>
+                    {bonuses.map((bonus, i) => (
+                      <div key={i} className="flex justify-between border-b border-yellow-500/50 pb-1">
+                        <span className="text-yellow-300">{bonus.name}:</span><span className="font-bold text-yellow-300">+{bonus.points}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center pt-4 border-t-2 border-yellow-500">
+                    <div className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                      最終スコア: {finalScore}
+                    </div>
+                    {password && (
+                      <div className="mt-4 pt-4 border-t-2 border-pink-500">
+                        <div className="text-xl font-bold text-pink-400 mb-2">🎉 S+ランク達成！</div>
+                        <div className="text-sm text-gray-400 mb-2">特別パスワード</div>
+                        <div className="bg-black/50 px-4 py-3 rounded-lg border-2 border-pink-500">
+                          <div className="text-2xl font-mono font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400">
+                            {password}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-2">このパスワードを保存しておいてください</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="mt-4 text-center">
+            <div className="text-gray-400 text-sm font-light" style={{letterSpacing: '0.05em'}}>
+              Co-Creation with Motohiko Sato & AI
+            </div>
+          </div>
+        </div>
+        </>
+      );
+    }
+
+    function StoryComponent() {
+      const [showTitle, setShowTitle] = useState(true);
+      const [board, setBoard] = useState([]);
+      const [movedElements, setMovedElements] = useState([]);
+      const [turns, setTurns] = useState(0);
+      const [combo, setCombo] = useState(0);
+      const [maxCombo, setMaxCombo] = useState(0);
+      const [totalCombo, setTotalCombo] = useState(0);
+      const [score, setScore] = useState(0);
+      const [silverCreated, setSilverCreated] = useState(0);
+      const [goldCreated, setGoldCreated] = useState(0);
+      const [specialUsed, setSpecialUsed] = useState(0);
+      const [isGameCleared, setIsGameCleared] = useState(false);
+      const [isGameOver, setIsGameOver] = useState(false);
+      const [selectedCell, setSelectedCell] = useState(null);
+      const [draggedElement, setDraggedElement] = useState(null);
+      const [crossEffects, setCrossEffects] = useState([]);
+      const [refinementEffects, setRefinementEffects] = useState([]);
+      const [comboDisplays, setComboDisplays] = useState([]);
+      const [elixirCount, setElixirCount] = useState(0);
+      const [itemMode, setItemMode] = useState(false);
+      const [hasReset, setHasReset] = useState(false);
+      const [cellHighlights, setCellHighlights] = useState([]);
+      const [phraseDisplays, setPhraseDisplays] = useState([]);
+      const [elixirEffects, setElixirEffects] = useState([]);
+      const [secretMission, setSecretMission] = useState(null);
+      const [showClearIllust, setShowClearIllust] = useState(false);
+      const audioContext = useRef(null);
+      const bgMusic = useRef(null);
+
+      useEffect(() => {
+        initializeBoard();
+        audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+
+        // BGM設定
+        bgMusic.current = new Audio('./music/精錬のエレメンタル.mp3');
+        bgMusic.current.loop = true;
+        bgMusic.current.volume = 0.5;
+
+        // ユーザー操作後に音楽を開始（自動再生ポリシー対応）
+        const startMusic = () => {
+          bgMusic.current.play().catch(err => console.log('音楽再生エラー:', err));
+          document.removeEventListener('click', startMusic);
+        };
+        document.addEventListener('click', startMusic);
+
+        return () => {
+          if (bgMusic.current) {
+            bgMusic.current.pause();
+          }
+        };
+      }, []);
+
+      const basicElements = ['地球', '水', '火', '風', '自然', 'スピリット'];
+      const randomElement = () => basicElements[Math.floor(Math.random() * basicElements.length)];
+
+      const saveGameLog = async (cleared, finalTurns, finalMaxCombo, finalScore) => {
+        const timestamp = new Date().toISOString();
+        const turnBonus = cleared ? Math.max(0, (100 - finalTurns) * 300) : 0;
+        const comboBonus = cleared ? finalMaxCombo * 2000 : 0;
+        const totalScore = cleared ? finalScore + comboBonus + turnBonus : finalScore;
+
+        const logEntry = {
+          timestamp,
+          result: cleared ? '✅ クリア' : '❌ ゲームオーバー',
+          turns: finalTurns,
+          maxCombo: finalMaxCombo,
+          score: finalScore,
+          comboBonus: comboBonus,
+          turnBonus: turnBonus,
+          totalScore: totalScore
+        };
+
+        console.log('ゲームログ:', logEntry);
+
+        // ログサーバーに送信
+        try {
+          const response = await fetch('http://localhost:3000/log', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(logEntry)
+          });
+          if (response.ok) {
+            console.log('ログをファイルに保存しました');
+          }
+        } catch (error) {
+          console.log('ログサーバーが起動していません:', error.message);
+        }
+      };
+
+      const initializeBoard = () => {
+        const newBoard = Array.from({length: 18}).fill().map(() => Array.from({length: 12}).fill().map(randomElement));
+        setBoard(newBoard);
+        setMovedElements(Array.from({length: 18}).fill().map(() => Array.from({length: 12}).fill(false)));
+      };
+
+      const playSound = (freq, dur) => {
+        const osc = audioContext.current.createOscillator();
+        const gain = audioContext.current.createGain();
+        osc.connect(gain).connect(audioContext.current.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0, audioContext.current.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, audioContext.current.currentTime + 0.01);
+        gain.gain.linearRampToValueAtTime(0, audioContext.current.currentTime + dur);
+        osc.start(audioContext.current.currentTime);
+        osc.stop(audioContext.current.currentTime + dur);
+      };
+
+      const playSilverSound = () => {
+        const now = audioContext.current.currentTime;
+        const frequencies = [523.25, 659.25, 783.99];
+
+        frequencies.forEach((freq, index) => {
+          const oscillator = audioContext.current.createOscillator();
+          const gainNode = audioContext.current.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.current.destination);
+
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(freq, now);
+
+          gainNode.gain.setValueAtTime(0, now);
+          gainNode.gain.linearRampToValueAtTime(0.3, now + 0.02 + index * 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+          oscillator.start(now + index * 0.05);
+          oscillator.stop(now + 0.8);
+        });
+
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const sparkle = audioContext.current.createOscillator();
+            const sparkleGain = audioContext.current.createGain();
+
+            sparkle.connect(sparkleGain);
+            sparkleGain.connect(audioContext.current.destination);
+
+            sparkle.type = 'sine';
+            sparkle.frequency.setValueAtTime(2000 + Math.random() * 1000, audioContext.current.currentTime);
+
+            sparkleGain.gain.setValueAtTime(0.1, audioContext.current.currentTime);
+            sparkleGain.gain.exponentialRampToValueAtTime(0.01, audioContext.current.currentTime + 0.2);
+
+            sparkle.start(audioContext.current.currentTime);
+            sparkle.stop(audioContext.current.currentTime + 0.2);
+          }, i * 100);
+        }
+      };
+
+      const playGoldSound = () => {
+        const now = audioContext.current.currentTime;
+        const frequencies = [659.25, 783.99, 987.77];
+
+        frequencies.forEach((freq, index) => {
+          const oscillator = audioContext.current.createOscillator();
+          const gainNode = audioContext.current.createGain();
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.current.destination);
+
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(freq, now);
+
+          gainNode.gain.setValueAtTime(0, now);
+          gainNode.gain.linearRampToValueAtTime(0.35, now + 0.02 + index * 0.04);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+
+          oscillator.start(now + index * 0.04);
+          oscillator.stop(now + 1.2);
+        });
+
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            const sparkle = audioContext.current.createOscillator();
+            const sparkleGain = audioContext.current.createGain();
+
+            sparkle.connect(sparkleGain);
+            sparkleGain.connect(audioContext.current.destination);
+
+            sparkle.type = 'sine';
+            sparkle.frequency.setValueAtTime(2500 + Math.random() * 1500, audioContext.current.currentTime);
+
+            sparkleGain.gain.setValueAtTime(0.15, audioContext.current.currentTime);
+            sparkleGain.gain.exponentialRampToValueAtTime(0.01, audioContext.current.currentTime + 0.3);
+
+            sparkle.start(audioContext.current.currentTime);
+            sparkle.stop(audioContext.current.currentTime + 0.3);
+          }, i * 80);
+        }
+      };
+
+      const playSpecialSound = () => {
+        const now = audioContext.current.currentTime;
+
+        // 低音のインパクト
+        const bass = audioContext.current.createOscillator();
+        const bassGain = audioContext.current.createGain();
+        bass.connect(bassGain);
+        bassGain.connect(audioContext.current.destination);
+        bass.type = 'sine';
+        bass.frequency.setValueAtTime(80, now);
+        bassGain.gain.setValueAtTime(0.4, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        bass.start(now);
+        bass.stop(now + 0.3);
+
+        // 上昇する派手な和音
+        const chordFreqs = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        chordFreqs.forEach((freq, index) => {
+          const osc = audioContext.current.createOscillator();
+          const gain = audioContext.current.createGain();
+          osc.connect(gain);
+          gain.connect(audioContext.current.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + index * 0.03);
+          gain.gain.setValueAtTime(0, now + index * 0.03);
+          gain.gain.linearRampToValueAtTime(0.25, now + index * 0.03 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + index * 0.03 + 0.6);
+          osc.start(now + index * 0.03);
+          osc.stop(now + index * 0.03 + 0.6);
+        });
+
+        // 大量のキラキラ（派手に）
+        for (let i = 0; i < 15; i++) {
+          setTimeout(() => {
+            const sparkle = audioContext.current.createOscillator();
+            const sparkleGain = audioContext.current.createGain();
+            sparkle.connect(sparkleGain);
+            sparkleGain.connect(audioContext.current.destination);
+            sparkle.type = 'sine';
+            sparkle.frequency.setValueAtTime(1500 + Math.random() * 2500, audioContext.current.currentTime);
+            sparkleGain.gain.setValueAtTime(0.2, audioContext.current.currentTime);
+            sparkleGain.gain.exponentialRampToValueAtTime(0.01, audioContext.current.currentTime + 0.4);
+            sparkle.start(audioContext.current.currentTime);
+            sparkle.stop(audioContext.current.currentTime + 0.4);
+          }, i * 40);
+        }
+      };
+
+      const findConnected = (board, row, col, element) => {
+        const connected = [];
+        const stack = [[row, col]];
+        const visited = new Set();
+
+        while (stack.length) {
+          const [r, c] = stack.pop();
+          const key = `${r},${c}`;
+          if (r < 0 || r >= 18 || c < 0 || c >= 12 || visited.has(key) || board[r][c] !== element) continue;
+
+          visited.add(key);
+          connected.push([r, c]);
+          stack.push([r-1, c], [r+1, c], [r, c-1], [r, c+1]);
+        }
+
+        return connected;
+      };
+
+      const processBoard = async (newBoard, currentTurns, specialUsedCount, elixirCountValue) => {
+        let madeChanges = false;
+        let currentCombo = 0;
+        let comboStarted = false;
+        let specialCounter = specialUsedCount || 0;
+        let elixirCounter = elixirCountValue || 0;
+        let maxComboInThisTurn = 0;
+
+        const clearCells = (cells) => {
+          cells.forEach(([r, c]) => {
+            newBoard[r][c] = 'empty';
+          });
+          playSound(440 + currentCombo * 20, 0.1);
+        };
+
+        const applyGravity = () => {
+          for (let col = 0; col < 12; col++) {
+            let emptyRow = 17;
+            for (let row = 17; row >= 0; row--) {
+              if (newBoard[row][col] !== 'empty') {
+                if (emptyRow !== row) {
+                  newBoard[emptyRow][col] = newBoard[row][col];
+                  newBoard[row][col] = 'empty';
+                }
+                emptyRow--;
+              }
+            }
+          }
+        };
+
+        const fillEmpty = () => {
+          for (let row = 0; row < 18; row++) {
+            for (let col = 0; col < 12; col++) {
+              if (newBoard[row][col] === 'empty') {
+                newBoard[row][col] = randomElement();
+              }
+            }
+          }
+        };
+
+        const upgradeElements = async () => {
+          let upgraded = false;
+          for (let row = 0; row < 18; row++) {
+            for (let col = 0; col < 12; col++) {
+              if (newBoard[row][col] === 'シルバー') {
+                const connected = findConnected(newBoard, row, col, 'シルバー');
+                if (connected.length >= 2) {
+                  newBoard[row][col] = 'ゴールド';
+                  connected.slice(1).forEach(([r, c]) => newBoard[r][c] = 'empty');
+                  upgraded = true;
+                  setGoldCreated(prev => prev + 1);
+                  setScore(prev => prev + 500);
+                  playGoldSound();
+
+                  // 秘密ミッション判定（3ターン以内にゴールド精錬）
+                  if (currentTurns <= 3) {
+                    window.__secretMissionPending3 = true;
+                  }
+
+                  // フレーズ表示を追加
+                  const phraseId = Date.now() + Math.random();
+                  setPhraseDisplays(prev => [...prev, { id: phraseId, text: 'ゴールドエレメント精錬！', type: 'gold' }]);
+                  setTimeout(() => {
+                    setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+                  }, 1500);
+
+                  // セルハイライトを表示
+                  const highlightId = Date.now() + Math.random();
+                  setCellHighlights(prev => [...prev, { id: highlightId, row, col }]);
+                  setTimeout(() => {
+                    setCellHighlights(prev => prev.filter(h => h.id !== highlightId));
+                  }, 800);
+
+                  // 0.8秒待ってからイラスト表示
+                  setTimeout(() => {
+                    const effectId = Date.now() + Math.random();
+                    setRefinementEffects(prev => [...prev, { id: effectId, type: 'gold' }]);
+                    setTimeout(() => {
+                      setRefinementEffects(prev => prev.filter(e => e.id !== effectId));
+                    }, 1800);
+                  }, 800);
+
+                  // イラスト表示完了まで待機 (0.8秒ハイライト + 1.8秒イラスト = 2.6秒)
+                  await new Promise(resolve => setTimeout(resolve, 2600));
+                }
+              } else if (newBoard[row][col] === 'ゴールド') {
+                const connected = findConnected(newBoard, row, col, 'ゴールド');
+                if (connected.length >= 2) {
+                  newBoard[row][col] = 'ハート';
+                  connected.slice(1).forEach(([r, c]) => newBoard[r][c] = 'empty');
+                  upgraded = true;
+
+                  // ゲームクリアログ保存
+                  saveGameLog(true, turns, maxCombo, score);
+
+                  // フレーズ表示を追加
+                  const phraseId = Date.now() + Math.random();
+                  setPhraseDisplays(prev => [...prev, { id: phraseId, text: 'ハートエレメント精錬！', type: 'heart' }]);
+                  setTimeout(() => {
+                    setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+                  }, 1500);
+
+                  // セルハイライトを表示
+                  const highlightId = Date.now() + Math.random();
+                  setCellHighlights(prev => [...prev, { id: highlightId, row, col }]);
+                  setTimeout(() => {
+                    setCellHighlights(prev => prev.filter(h => h.id !== highlightId));
+                  }, 800);
+
+                  // 0.8秒待ってからイラスト表示（クリックで進む）
+                  setTimeout(() => {
+                    setShowClearIllust(true);
+                  }, 800);
+
+                  // イラストがクリックされるまで待機
+                  await new Promise(resolve => {
+                    window.__clearIllustResolve = resolve;
+                  });
+
+                  // クリア後はこれ以上処理しない
+                  window.__gameCleared = true;
+                }
+              }
+            }
+          }
+          return upgraded;
+        };
+
+        do {
+          // ゲームクリア済みならループを抜ける
+          if (window.__gameCleared) {
+            break;
+          }
+
+          madeChanges = false;
+          for (let row = 0; row < 18; row++) {
+            for (let col = 0; col < 12; col++) {
+              const element = newBoard[row][col];
+              if (!['シルバー', 'ゴールド', 'ハート', 'special', 'empty'].includes(element)) {
+                const connected = findConnected(newBoard, row, col, element);
+                if (connected.length >= 6) {
+                  madeChanges = true;
+                  comboStarted = true;
+                  currentCombo++;
+                  maxComboInThisTurn = Math.max(maxComboInThisTurn, currentCombo);
+                  setCombo(currentCombo);
+                  setMaxCombo(prev => Math.max(prev, currentCombo));
+                  setTotalCombo(prev => prev + 1);
+                  setScore(prev => prev + 50);
+
+                  // コンボスコア追加（コンボごとに100点）
+                  setScore(prev => prev + 100);
+
+                  // コンボ表示を追加
+                  const comboId = Date.now() + Math.random();
+                  setComboDisplays(prev => [...prev, { id: comboId, combo: currentCombo }]);
+                  setTimeout(() => {
+                    setComboDisplays(prev => prev.filter(c => c.id !== comboId));
+                  }, 1000);
+                  if (connected.length >= 8) {
+                    // 8個以上でエリクサー獲得 + シルバー
+                    // 8個=1個、9個=2個、10個=3個...
+                    const elixirAmount = connected.length - 7;
+                    elixirCounter += elixirAmount;
+                    setElixirCount(elixirCounter);
+
+                    // 秘密ミッション判定（エリクサー累計8個以上）
+                    if (elixirCounter >= 8 && !window.__secretMissionElixir8Checked) {
+                      window.__secretMissionElixir8Checked = true;
+                      window.__secretMissionPending5 = true;
+                    }
+
+                    newBoard[row][col] = 'シルバー';
+                    setSilverCreated(prev => prev + 1);
+                    setScore(prev => prev + 200);
+                    playSilverSound();
+                    playSound(880, 0.15);
+
+                    // フレーズ表示を追加
+                    const phraseId = Date.now() + Math.random();
+                    setPhraseDisplays(prev => [...prev, { id: phraseId, text: 'シルバーエレメント精錬！', type: 'silver' }]);
+                    setTimeout(() => {
+                      setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+                    }, 1500);
+
+                    // セルハイライトを表示
+                    const highlightId = Date.now() + Math.random();
+                    setCellHighlights(prev => [...prev, { id: highlightId, row, col }]);
+                    setTimeout(() => {
+                      setCellHighlights(prev => prev.filter(h => h.id !== highlightId));
+                    }, 800);
+
+                    // 0.8秒待ってからシルバーイラスト表示
+                    setTimeout(() => {
+                      const effectId = Date.now() + Math.random();
+                      setRefinementEffects(prev => [...prev, { id: effectId, type: 'silver' }]);
+                      setTimeout(() => {
+                        setRefinementEffects(prev => prev.filter(e => e.id !== effectId));
+                      }, 1800);
+                    }, 800);
+
+                    // シルバーイラスト表示後にエリクサーフレーズとイラストを表示 (0.8秒 + 1.8秒 = 2.6秒後)
+                    setTimeout(() => {
+                      // エリクサーフレーズ
+                      const elixirPhraseId = Date.now() + Math.random();
+                      setPhraseDisplays(prev => [...prev, { id: elixirPhraseId, text: 'エリクサー獲得！', type: 'elixir' }]);
+                      setTimeout(() => {
+                        setPhraseDisplays(prev => prev.filter(p => p.id !== elixirPhraseId));
+                      }, 1500);
+
+                      // エリクサー派手エフェクト
+                      const elixirBurstId = Date.now() + Math.random();
+                      setElixirEffects(prev => [...prev, { id: elixirBurstId }]);
+                      setTimeout(() => {
+                        setElixirEffects(prev => prev.filter(e => e.id !== elixirBurstId));
+                      }, 1500);
+
+                      // エリクサーイラスト
+                      const elixirEffectId = Date.now() + Math.random();
+                      setRefinementEffects(prev => [...prev, { id: elixirEffectId, type: 'elixir' }]);
+                      setTimeout(() => {
+                        setRefinementEffects(prev => prev.filter(e => e.id !== elixirEffectId));
+                      }, 1800);
+                    }, 2600);
+
+                    clearCells(connected.slice(1));
+                    setBoard([...newBoard]);
+
+                    // 両方のイラスト表示完了まで待機 (0.8秒ハイライト + 1.8秒シルバー + 1.8秒エリクサー = 4.4秒)
+                    await new Promise(resolve => setTimeout(resolve, 4400));
+                  } else if (connected.length >= 7) {
+                    newBoard[row][col] = 'special';
+
+                    // 秘密ミッション判定（7ターン目に7つ消し）
+                    if (currentTurns === 7 && connected.length === 7) {
+                      window.__secretMissionPending2 = true;
+                    }
+
+                    clearCells(connected.slice(1));
+                    setBoard([...newBoard]);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                  } else {
+                    newBoard[row][col] = 'シルバー';
+                    setSilverCreated(prev => prev + 1);
+                    setScore(prev => prev + 200);
+                    playSilverSound();
+
+                    // 秘密ミッション判定を後で実行するためフラグ保存
+                    // currentTurnsは更新後のターン数（画面表示と同じ）
+                    const isSecretMission = currentTurns === 3;
+
+                    // フレーズ表示を追加
+                    const phraseId = Date.now() + Math.random();
+                    setPhraseDisplays(prev => [...prev, { id: phraseId, text: 'シルバーエレメント精錬！', type: 'silver' }]);
+                    setTimeout(() => {
+                      setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+                    }, 1500);
+
+                    // セルハイライトを表示
+                    const highlightId = Date.now() + Math.random();
+                    setCellHighlights(prev => [...prev, { id: highlightId, row, col }]);
+                    setTimeout(() => {
+                      setCellHighlights(prev => prev.filter(h => h.id !== highlightId));
+                    }, 800);
+
+                    // 0.8秒待ってからイラスト表示
+                    setTimeout(() => {
+                      const effectId = Date.now() + Math.random();
+                      setRefinementEffects(prev => [...prev, { id: effectId, type: 'silver' }]);
+                      setTimeout(() => {
+                        setRefinementEffects(prev => prev.filter(e => e.id !== effectId));
+                      }, 1800);
+                    }, 800);
+
+                    clearCells(connected.slice(1));
+                    setBoard([...newBoard]);
+
+                    // イラスト表示完了まで待機 (0.8秒ハイライト + 1.8秒イラスト = 2.6秒)
+                    await new Promise(resolve => setTimeout(resolve, 2600));
+
+                    // 秘密ミッション判定をここに移動（コンボ終了後に実行されるように）
+                    if (isSecretMission) {
+                      // processBoard完了後に実行されるようにする
+                      window.__secretMissionPending = true;
+                    }
+                  }
+                }
+              } else if (element === 'special') {
+                madeChanges = true;
+                comboStarted = true;
+                currentCombo++;
+                maxComboInThisTurn = Math.max(maxComboInThisTurn, currentCombo);
+                setCombo(currentCombo);
+                setMaxCombo(prev => Math.max(prev, currentCombo));
+                setTotalCombo(prev => prev + 1);
+                setScore(prev => prev + 50);
+
+                // コンボスコア追加（コンボごとに100点）
+                setScore(prev => prev + 100);
+
+                // スペシャル使用回数をカウント
+                specialCounter++;
+                setSpecialUsed(specialCounter);
+                setScore(prev => prev + 300);
+
+                // 秘密ミッション判定（スペシャル累計7回）
+                if (specialCounter === 7) {
+                  window.__secretMissionPending4 = true;
+                }
+
+                // フレーズ表示を追加
+                const phraseId = Date.now() + Math.random();
+                setPhraseDisplays(prev => [...prev, { id: phraseId, text: '精錬クロスバースト！', type: 'special' }]);
+                setTimeout(() => {
+                  setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+                }, 1500);
+
+                // コンボ表示を追加
+                const comboId = Date.now() + Math.random();
+                setComboDisplays(prev => [...prev, { id: comboId, combo: currentCombo }]);
+                setTimeout(() => {
+                  setComboDisplays(prev => prev.filter(c => c.id !== comboId));
+                }, 1000);
+
+                // 十字エフェクト追加
+                const effectId = Date.now();
+                setCrossEffects(prev => [...prev, { id: effectId, row, col }]);
+                setTimeout(() => {
+                  setCrossEffects(prev => prev.filter(e => e.id !== effectId));
+                }, 600);
+
+                // スペシャルエレメントイラスト表示
+                const refineEffectId = Date.now() + Math.random();
+                setRefinementEffects(prev => [...prev, { id: refineEffectId, type: 'special' }]);
+                setTimeout(() => {
+                  setRefinementEffects(prev => prev.filter(e => e.id !== refineEffectId));
+                }, 1800);
+
+                for (let r = 0; r < 18; r++) newBoard[r][col] = 'empty';
+                for (let c = 0; c < 12; c++) newBoard[row][c] = 'empty';
+                setBoard([...newBoard]);
+                playSpecialSound();
+
+                // イラスト表示完了まで待機 (1.8秒)
+                await new Promise(resolve => setTimeout(resolve, 1800));
+              }
+            }
+          }
+          if (madeChanges) {
+            applyGravity();
+            setBoard([...newBoard]);
+            await new Promise(resolve => setTimeout(resolve, 300));
+            fillEmpty();
+            setBoard([...newBoard]);
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          // ゲームクリア済みならループを抜ける
+          if (window.__gameCleared) {
+            break;
+          }
+
+          if (await upgradeElements()) {
+            // ゲームクリア済みならループを抜ける
+            if (window.__gameCleared) {
+              break;
+            }
+            madeChanges = true;
+            setBoard([...newBoard]);
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } while (madeChanges);
+
+        // ゲームクリア済みなら秘密ミッション処理をスキップ
+        if (window.__gameCleared) {
+          return newBoard;
+        }
+
+        // コンボ終了後に秘密ミッション表示
+        if (window.__secretMissionPending) {
+          window.__secretMissionPending = false;
+          setScore(prev => prev + 300);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 300 });
+        }
+        if (window.__secretMissionPending2) {
+          window.__secretMissionPending2 = false;
+          setScore(prev => prev + 700);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 700 });
+        }
+        if (window.__secretMissionPending3) {
+          window.__secretMissionPending3 = false;
+          setScore(prev => prev + 3000);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 3000 });
+        }
+        if (window.__secretMissionPending4) {
+          window.__secretMissionPending4 = false;
+          setScore(prev => prev + 7000);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 7000 });
+        }
+
+        // 5ターン目終了時に銀エレメント5個以上の秘密ミッション判定
+        if (currentTurns === 5 && !window.__secretMission5Checked) {
+          window.__secretMission5Checked = true;
+          let silverCount = 0;
+          for (let row = 0; row < 18; row++) {
+            for (let col = 0; col < 12; col++) {
+              if (newBoard[row][col] === 'シルバー') {
+                silverCount++;
+              }
+            }
+          }
+          if (silverCount >= 5) {
+            setScore(prev => prev + 500);
+            const missionId = Date.now() + Math.random();
+            setSecretMission({ id: missionId, score: 500 });
+          }
+        }
+
+        // 10ターン目終了時に銀エレメント10個以上の秘密ミッション判定
+        if (currentTurns === 10 && !window.__secretMission10Checked) {
+          window.__secretMission10Checked = true;
+          let silverCount = 0;
+          for (let row = 0; row < 18; row++) {
+            for (let col = 0; col < 12; col++) {
+              if (newBoard[row][col] === 'シルバー') {
+                silverCount++;
+              }
+            }
+          }
+          if (silverCount >= 10) {
+            setScore(prev => prev + 1000);
+            const missionId = Date.now() + Math.random();
+            setSecretMission({ id: missionId, score: 1000 });
+          }
+        }
+
+        // エリクサー累計8個の秘密ミッション判定
+        if (window.__secretMissionPending5) {
+          window.__secretMissionPending5 = false;
+          setScore(prev => prev + 8000);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 8000 });
+        }
+
+        // 6ターン目に6コンボ以上の秘密ミッション判定
+        if (currentTurns === 6 && maxComboInThisTurn >= 6 && !window.__secretMission6Turn6Combo) {
+          window.__secretMission6Turn6Combo = true;
+          setScore(prev => prev + 6000);
+          const missionId = Date.now() + Math.random();
+          setSecretMission({ id: missionId, score: 6000 });
+        }
+
+        return newBoard;
+      };
+
+      const swapElements = async (sourceRow, sourceCol, targetRow, targetCol) => {
+        if (isGameOver) return;
+
+        const sourceElement = board[sourceRow][sourceCol];
+        const targetElement = board[targetRow][targetCol];
+
+        if (['シルバー', 'ゴールド'].includes(sourceElement) || ['シルバー', 'ゴールド'].includes(targetElement)) {
+          return;
+        }
+
+        const newBoard = board.map(row => [...row]);
+        [newBoard[sourceRow][sourceCol], newBoard[targetRow][targetCol]] = [newBoard[targetRow][targetCol], newBoard[sourceRow][sourceCol]];
+
+        const newMovedElements = movedElements.map(row => [...row]);
+        newMovedElements[sourceRow][sourceCol] = true;
+        newMovedElements[targetRow][targetCol] = true;
+
+        setBoard(newBoard);
+        setMovedElements(newMovedElements);
+        const newTurns = turns + 1;
+        setTurns(newTurns);
+
+        if (newTurns >= 100) {
+          setIsGameOver(true);
+          // ゲームオーバーログ保存
+          saveGameLog(false, newTurns, maxCombo, score);
+        }
+
+        playSound(330, 0.1);
+        await processBoard(newBoard, newTurns, specialUsed, elixirCount);
+      };
+
+      const resetMovedElements = () => {
+        if (!hasReset) {
+          setMovedElements(Array.from({length: 18}).fill().map(() => Array.from({length: 12}).fill(false)));
+          setHasReset(true);
+          setScore(prev => Math.floor(prev / 2));
+          playSound(440, 0.2);
+
+          // 10ターン以内にリセットした場合の秘密ミッション
+          if (turns <= 10) {
+            setTimeout(() => {
+              setScore(prev => prev + 6000);
+              const missionId = Date.now() + Math.random();
+              setSecretMission({ id: missionId, score: 6000 });
+            }, 1800);
+          }
+
+          // リセットイラスト表示
+          const effectId = Date.now() + Math.random();
+          setRefinementEffects(prev => [...prev, { id: effectId, type: 'reset' }]);
+          setTimeout(() => {
+            setRefinementEffects(prev => prev.filter(e => e.id !== effectId));
+          }, 1800);
+        }
+      };
+
+      const applyGravityAndFill = async (newBoard) => {
+        // 重力適用
+        for (let col = 0; col < 12; col++) {
+          let emptyRow = 17;
+          for (let row = 17; row >= 0; row--) {
+            if (newBoard[row][col] !== 'empty') {
+              if (emptyRow !== row) {
+                newBoard[emptyRow][col] = newBoard[row][col];
+                newBoard[row][col] = 'empty';
+              }
+              emptyRow--;
+            }
+          }
+        }
+        setBoard([...newBoard]);
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // 空きマスを補充
+        for (let row = 0; row < 18; row++) {
+          for (let col = 0; col < 12; col++) {
+            if (newBoard[row][col] === 'empty') {
+              newBoard[row][col] = randomElement();
+            }
+          }
+        }
+        setBoard([...newBoard]);
+      };
+
+      const handleCellClick = (row, col) => {
+        if (isGameOver) return;
+
+        // アイテムモード時の処理
+        if (itemMode && elixirCount > 0) {
+          const element = board[row][col];
+          if (!['シルバー', 'ゴールド', 'ハート', 'empty'].includes(element)) {
+            setElixirCount(prev => prev - 1);
+            setItemMode(false);
+            setScore(prev => prev + 100);
+            playSound(660, 0.15);
+
+            // エリクサーフレーズ表示
+            const phraseId = Date.now() + Math.random();
+            setPhraseDisplays(prev => [...prev, { id: phraseId, text: 'エリクサー解放！', type: 'elixir' }]);
+            setTimeout(() => {
+              setPhraseDisplays(prev => prev.filter(p => p.id !== phraseId));
+            }, 1500);
+
+            // エリクサー派手エフェクト
+            const elixirBurstId = Date.now() + Math.random();
+            setElixirEffects(prev => [...prev, { id: elixirBurstId }]);
+            setTimeout(() => {
+              setElixirEffects(prev => prev.filter(e => e.id !== elixirBurstId));
+            }, 1500);
+
+            // エリクサーイラスト表示
+            const elixirEffectId = Date.now() + Math.random();
+            setRefinementEffects(prev => [...prev, { id: elixirEffectId, type: 'elixir' }]);
+            setTimeout(() => {
+              setRefinementEffects(prev => prev.filter(e => e.id !== elixirEffectId));
+            }, 1800);
+
+            // エフェクト終了後にエレメントを消して重力適用（1.8秒後）
+            setTimeout(async () => {
+              const newBoard = board.map(r => [...r]);
+              newBoard[row][col] = 'empty';
+              setBoard(newBoard);
+
+              // 重力と補充のみ適用（コンボ判定なし、ターン消費なし）
+              setTimeout(async () => {
+                await applyGravityAndFill(newBoard);
+              }, 100);
+            }, 1800);
+          }
+          return;
+        }
+
+        if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+          setSelectedCell(null);
+        } else if (!['シルバー', 'ゴールド'].includes(board[row][col]) && !movedElements[row][col]) {
+          setSelectedCell({ row, col });
+          playSound(220, 0.1);
+        }
+      };
+
+      const handleArrowClick = (sourceRow, sourceCol, targetRow, targetCol) => {
+        swapElements(sourceRow, sourceCol, targetRow, targetCol);
+        setSelectedCell(null);
+      };
+
+      const handleStartGame = () => {
+        setShowTitle(false);
+        // BGM開始
+        if (bgMusic.current) {
+          bgMusic.current.play().catch(err => console.log('音楽再生エラー:', err));
+        }
+      };
+
+      if (showTitle) {
+        return (
+          <div className="title-screen">
+            <button className="start-button" onClick={handleStartGame}>
+              START
+            </button>
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          <MainComponent
+            board={board}
+            setBoard={setBoard}
+            turns={turns}
+            setTurns={setTurns}
+            combo={combo}
+            setCombo={setCombo}
+            maxCombo={maxCombo}
+            setMaxCombo={setMaxCombo}
+            score={score}
+            totalCombo={totalCombo}
+            isGameCleared={isGameCleared}
+            setIsGameCleared={setIsGameCleared}
+            isGameOver={isGameOver}
+            onCellClick={handleCellClick}
+            onArrowClick={handleArrowClick}
+            selectedCell={selectedCell}
+            playSound={playSound}
+            movedElements={movedElements}
+            crossEffects={crossEffects}
+            refinementEffects={refinementEffects}
+            comboDisplays={comboDisplays}
+            elixirCount={elixirCount}
+            itemMode={itemMode}
+            setItemMode={setItemMode}
+            resetMovedElements={resetMovedElements}
+            hasReset={hasReset}
+            cellHighlights={cellHighlights}
+            phraseDisplays={phraseDisplays}
+            elixirEffects={elixirEffects}
+            secretMission={secretMission}
+            setSecretMission={setSecretMission}
+            showClearIllust={showClearIllust}
+            setShowClearIllust={setShowClearIllust}
+          />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<StoryComponent />);
+  </script>
+</body>
+</html>
