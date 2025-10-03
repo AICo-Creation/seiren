@@ -545,7 +545,7 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-image: url('./image/タイトル.jpeg');
+      background-image: url('./image/title.jpeg');
       background-size: contain;
       background-position: center center;
       background-repeat: no-repeat;
@@ -760,7 +760,7 @@
                 }}
               >
                 <img
-                  src="./image/ハート.png"
+                  src="./image/heart.png"
                   alt="heart"
                   style={{
                     maxWidth: '80vw',
@@ -849,12 +849,12 @@
           ))}
           {refinementEffects.map(effect => {
             let imageName = '';
-            if (effect.type === 'silver') imageName = 'シルバー';
-            else if (effect.type === 'gold') imageName = 'ゴールド';
-            else if (effect.type === 'heart') imageName = 'ハート';
-            else if (effect.type === 'special') imageName = 'スペシャル';
-            else if (effect.type === 'reset') imageName = 'リセット';
-            else if (effect.type === 'elixir') imageName = 'タイトル';
+            if (effect.type === 'silver') imageName = 'silver';
+            else if (effect.type === 'gold') imageName = 'gold';
+            else if (effect.type === 'heart') imageName = 'heart';
+            else if (effect.type === 'special') imageName = 'special';
+            else if (effect.type === 'reset') imageName = 'reset';
+            else if (effect.type === 'elixir') imageName = 'title';
 
             return (
               <div key={effect.id} className="refinement-effect">
