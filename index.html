@@ -1086,16 +1086,8 @@
             else if (finalScore >= 15000) rank = 'B';
             else if (finalScore >= 10000) rank = 'C';
 
-            // パスワード生成（SS+ランクのみ）
-            const generatePassword = () => {
-              const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 紛らわしい文字を除外
-              let password = '';
-              for (let i = 0; i < 10; i++) {
-                password += chars.charAt(Math.floor(Math.random() * chars.length));
-              }
-              return password;
-            };
-            const password = rank === 'SS+' ? generatePassword() : null;
+            // 固定パスワード（SS+ランクのみ）
+            const password = rank === 'SS+' ? 'SEREN8KQ2X' : null;
 
             return (
               <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl p-4">
@@ -1129,7 +1121,7 @@
                     </div>
                     {password && (
                       <div className="mt-4 pt-4 border-t-2 border-pink-500">
-                        <div className="text-xl font-bold text-pink-400 mb-2">🎉 S+ランク達成！</div>
+                        <div className="text-xl font-bold text-pink-400 mb-2">🎉 SS+ランク達成！</div>
                         <div className="text-sm text-gray-400 mb-2">特別パスワード</div>
                         <div className="bg-black/50 px-4 py-3 rounded-lg border-2 border-pink-500">
                           <div className="text-2xl font-mono font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400">
